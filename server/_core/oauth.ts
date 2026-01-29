@@ -57,7 +57,7 @@ export function registerOAuthRoutes(app: Express) {
     console.log("[Auth] Mock login endpoint hit");
     try {
       const demoUser = {
-        openId: "demo-user-id",
+        openId: "demo-123456",
         name: "Demo User",
         email: "demo@vinberly.com",
         loginMethod: "mock",
