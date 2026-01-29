@@ -274,14 +274,32 @@ class SDKServer {
     if (!user) {
       // Bypass external sync for mock users
       if (sessionUserId.startsWith("demo-")) {
+        console.log(`[Auth] Creating demo user for: ${sessionUserId}`);
         await db.upsertUser({
           openId: sessionUserId,
           name: session.name || "Demo User",
           email: "demo@vinberly.com",
           loginMethod: "mock",
+          role: "user",
           lastSignedIn: signedInAt,
         });
         user = await db.getUserByOpenId(sessionUserId);
+        
+        if (!user) {
+          // Fallback - create a temporary user object for demo purposes
+          console.warn(`[Auth] Creating temporary demo user for: ${sessionUserId}`);
+          user = {
+            id: Date.now(),
+            openId: sessionUserId,
+            name: session.name || "Demo User",
+            email: "demo@vinberly.com",
+            loginMethod: "mock",
+            role: "user",
+            createdAt: signedInAt,
+            updatedAt: signedInAt,
+            lastSignedIn: signedInAt,
+          };
+        }
       } else {
         try {
           const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
