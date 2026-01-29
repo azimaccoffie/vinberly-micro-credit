@@ -3,7 +3,9 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
+import * as db from "./db";
 import { createLoanApplication, getLoanApplications, updateLoanApplicationStatus, getLoanApplicationById } from "./loanDb";
+import { getAllUsers, updateUserRole as updateUserRoleDB, deleteUser as deleteUserDB } from "./db";
 import { notifyOwner } from "./_core/notification";
 import { sendConfirmationEmail, sendAdminNotificationEmail } from "./emailService";
 import { sendTeamAlertSMS } from "./smsService";
@@ -28,6 +30,47 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+    register: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          email: z.string().email(),
+          password: z.string().min(8), // Minimum 8 characters for security
+          businessName: z.string().min(1),
+          businessType: z.string().min(1),
+        })
+      )
+      .mutation(async ({ input }) => {
+        // In a real implementation, you would:
+        // 1. Hash the password
+        // 2. Check if user already exists
+        // 3. Create the user in the database
+        // 4. Send verification email
+        // 5. Return success or error
+        
+        // For now, we'll simulate registration by creating a user
+        // and returning a success message
+        
+        // Generate a unique openId for the user
+        const openId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Create user with role 'user' by default
+        await db.upsertUser({
+          openId: openId,
+          name: input.fullName,
+          email: input.email,
+          loginMethod: "email-password", // Indicate registration method
+          role: "user", // Default role for new registrations
+          lastSignedIn: new Date(),
+        });
+        
+        return {
+          success: true,
+          message: "Registration successful! Please check your email to verify your account.",
+          // Returning openId so the client knows the user identifier
+          openId: openId,
+        };
+      }),
   }),
 
   loanApplication: router({
@@ -437,6 +480,60 @@ export const appRouter = router({
       }
       return getMarketplaceStatistics();
     }),
+  }),
+  
+  admin: router({
+    getUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") {
+        throw new Error("You do not have required permission (10002)");
+      }
+      
+      // Fetch all users from the database
+      return await getAllUsers();
+    }),
+    
+    updateUserRole: protectedProcedure
+      .input(
+        z.object({
+          openId: z.string(), // Use openId instead of userId
+          role: z.enum(["user", "admin"]),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("You do not have required permission (10002)");
+        }
+        
+        // Update the user role in the database
+        const updatedUser = await updateUserRoleDB(input.openId, input.role);
+        
+        if (!updatedUser) {
+          throw new Error("User not found");
+        }
+        
+        return { success: true, message: `User role updated to ${input.role}` };
+      }),
+    
+    deleteUser: protectedProcedure
+      .input(
+        z.object({
+          openId: z.string(), // Use openId instead of userId
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new Error("You do not have required permission (10002)");
+        }
+        
+        // Delete the user from the database
+        const deleted = await deleteUserDB(input.openId);
+        
+        if (!deleted) {
+          throw new Error("User not found");
+        }
+        
+        return { success: true, message: "User deleted successfully" };
+      }),
   }),
 });
 

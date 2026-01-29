@@ -27,7 +27,8 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
-const menuItems = [
+// Define base menu items
+const baseMenuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
   { icon: Activity, label: "Loan Tracker", path: "/track" },
   { icon: FileText, label: "Documents", path: "/documents" },
@@ -35,6 +36,11 @@ const menuItems = [
   { icon: Coins, label: "Tokenization", path: "/tokenization" },
   { icon: Share2, label: "Referral", path: "/referral" },
   { icon: LifeBuoy, label: "Support", path: "/support" },
+];
+
+// Add user management for admins only
+const adminMenuItems = [
+  { icon: Users, label: "User Management", path: "/users" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -99,6 +105,9 @@ export default function DashboardLayout({
     );
   }
 
+  // Define menu items based on user role
+  const menuItems = user?.role === 'admin' ? [...baseMenuItems, ...adminMenuItems] : baseMenuItems;
+
   return (
     <SidebarProvider
       style={
@@ -107,7 +116,7 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <DashboardLayoutContent setSidebarWidth={setSidebarWidth} menuItems={menuItems}>
         {children}
       </DashboardLayoutContent>
     </SidebarProvider>
@@ -117,11 +126,17 @@ export default function DashboardLayout({
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
+  menuItems: {
+    icon: React.ComponentType<any>;
+    label: string;
+    path: string;
+  }[];
 };
 
 function DashboardLayoutContent({
   children,
   setSidebarWidth,
+  menuItems,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -129,6 +144,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuItems = user?.role === 'admin' ? [...baseMenuItems, ...adminMenuItems] : baseMenuItems;
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
 

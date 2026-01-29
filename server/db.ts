@@ -113,4 +113,50 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+// Get all users for admin management
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Using in-memory user store for user listing");
+    return Array.from(inMemoryUsers.values());
+  }
+
+  return await db.select().from(users);
+}
+
+// Update user role for admin management
+export async function updateUserRole(openId: string, role: "user" | "admin") {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Updating user role in in-memory store");
+    const user = inMemoryUsers.get(openId);
+    if (user) {
+      const updatedUser = { ...user, role };
+      inMemoryUsers.set(openId, updatedUser);
+      return updatedUser;
+    }
+    return null;
+  }
+
+  const result = await db.update(users).set({ role }).where(eq(users.openId, openId)).returning();
+  return result.length > 0 ? result[0] : null;
+}
+
+// Delete user for admin management
+export async function deleteUser(openId: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Deleting user from in-memory store");
+    const user = inMemoryUsers.get(openId);
+    if (user) {
+      inMemoryUsers.delete(openId);
+      return true;
+    }
+    return false;
+  }
+
+  const result = await db.delete(users).where(eq(users.openId, openId));
+  return result.rowsAffected > 0;
+}
+
 // TODO: add feature queries here as your schema grows.

@@ -18,6 +18,8 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import Support from "./pages/Support";
 import Marketplace from "./pages/Marketplace";
 import Tokenization from "./pages/Tokenization";
+import UserRegistration from "./pages/UserRegistration";
+import UserManagement from "./pages/UserManagement";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -32,11 +34,13 @@ function Router() {
       <Route path={"/documents"} component={DocumentVerification} />
       <Route path={"/dashboard"} component={CustomerDashboard} />
       <Route path={"/payment"} component={PaymentPage} />
-      <Route path={"/analytics"} component={AdminAnalytics} />
-      <Route path={"/support"} component={Support} />
+      <Route path="/analytics" component={AdminAnalytics} />
+      <Route path="/users" component={UserManagement} />
+      <Route path="/support" component={Support} />
       <Route path={"/marketplace"} component={Marketplace} />
-      <Route path={"/tokenization"} component={Tokenization} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/tokenization" component={Tokenization} />
+      <Route path="/register" component={UserRegistration} />
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
