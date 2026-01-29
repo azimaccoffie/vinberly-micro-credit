@@ -39,11 +39,14 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
-  const secure = isSecureRequest(req);
+  // For Railway deployment, we need to handle proxy headers properly
+  const forwardedProto = req.headers['x-forwarded-proto'] as string;
+  const isSecure = forwardedProto === 'https';
+  
   return {
     httpOnly: true,
     path: "/",
-    sameSite: secure ? "none" : "lax",
-    secure,
+    sameSite: "none", // Allow cross-site requests for OAuth
+    secure: isSecure, // Set secure flag based on forwarded header
   };
 }
