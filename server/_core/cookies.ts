@@ -40,13 +40,16 @@ export function getSessionCookieOptions(
   //       : undefined;
 
   // For Railway deployment, we need to handle proxy headers properly
+  // Check if the request is coming through a proxy as HTTPS
   const forwardedProto = req.headers['x-forwarded-proto'] as string;
   const isSecure = forwardedProto === 'https';
   
+  // In production environments like Railway, we need to ensure sameSite: none works properly
+  // When sameSite is 'none', secure must be true for the cookie to be sent
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none", // Allow cross-site requests for OAuth
-    secure: isSecure, // Set secure flag based on forwarded header
+    sameSite: "none", // Required for OAuth flows to work across origins
+    secure: process.env.NODE_ENV === 'production' ? true : isSecure, // Always true in production for sameSite: none
   };
 }

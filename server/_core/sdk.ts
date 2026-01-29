@@ -313,7 +313,27 @@ class SDKServer {
           user = await db.getUserByOpenId(userInfo.openId);
         } catch (error) {
           console.error("[Auth] Failed to sync user from OAuth:", error);
-          throw ForbiddenError("Failed to sync user info");
+          
+          // For demo users and in case OAuth server is not reachable, create a fallback user
+          if (sessionUserId.startsWith("demo-")) {
+            console.warn(`[Auth] Creating fallback demo user for: ${sessionUserId}`);
+            const fallbackUser = {
+              id: parseInt(sessionUserId.replace("demo-", "")) || Date.now(),
+              openId: sessionUserId,
+              name: session.name || "Demo User",
+              email: "demo@vinberly.com",
+              loginMethod: "mock",
+              role: "user" as const,
+              createdAt: signedInAt,
+              updatedAt: signedInAt,
+              lastSignedIn: signedInAt,
+            };
+            await db.upsertUser(fallbackUser);
+            user = await db.getUserByOpenId(sessionUserId);
+            if (!user) user = fallbackUser; // Final fallback
+          } else {
+            throw ForbiddenError("Failed to sync user info");
+          }
         }
       }
     }
