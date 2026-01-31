@@ -138,8 +138,8 @@ export default function Home() {
                   variant="outline" 
                   className="border-amber-600 text-amber-700 hover:bg-amber-50 gap-2"
                 >
-                  <a href={getMockLoginUrl()}>
-                    Demo Login
+                  <a href="/login">
+                    Sign In
                   </a>
                 </Button>
               </div>

@@ -138,15 +138,7 @@ export default function LoginPage() {
                 <User className="h-4 w-4" /> Demo Login
               </Button>
               
-              <Button 
-                asChild
-                variant="outline" 
-                className="w-full border-amber-600 text-amber-700 hover:bg-amber-50 gap-2"
-              >
-                <a href={getMockLoginUrl()}>
-                  Demo Login
-                </a>
-              </Button>
+
             </div>
             
             <p className="mt-6 text-sm text-muted-foreground">
