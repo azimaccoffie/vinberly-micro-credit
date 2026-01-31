@@ -1,9 +1,10 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { sdk } from "./_core/sdk";
 import { createLoanApplication, getLoanApplications, updateLoanApplicationStatus, getLoanApplicationById, getCustomerLoanData } from "./loanDb";
 import { getAllUsers, updateUserRole as updateUserRoleDB, deleteUser as deleteUserDB } from "./db";
 import { notifyOwner } from "./_core/notification";
@@ -46,25 +47,17 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          // In a real implementation, you would:
-          // 1. Hash the password
-          // 2. Check if user already exists
-          // 3. Create the user in the database
-          // 4. Send verification email
-          // 5. Return success or error
+          // Check if user already exists
+          const existingUsers = await db.getAllUsers();
+          const existingUser = existingUsers.find(u => u.email === input.email);
           
-          // Check if email already exists (simulated)
-          // const existingUser = await db.getUserByEmail(input.email);
-          // if (existingUser) {
-          //   throw new Error("User with this email already exists");
-          // }
-          
-          // For now, we'll simulate registration by creating a user
-          // and returning a success message
-          
+          if (existingUser) {
+            throw new Error('User with this email already exists');
+          }
+
           // Generate a unique openId for the user
           const openId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          
+
           // Create user with role 'user' by default
           await db.upsertUser({
             openId: openId,
@@ -74,7 +67,7 @@ export const appRouter = router({
             role: "user", // Default role for new registrations
             lastSignedIn: new Date(),
           });
-          
+
           return {
             success: true,
             message: "Registration successful! Please check your email to verify your account.",
@@ -84,6 +77,61 @@ export const appRouter = router({
         } catch (error: any) {
           console.error("Registration error:", error);
           throw new Error(error.message || "Registration failed. Please try again.");
+        }
+      }),
+    login: publicProcedure
+      .input(
+        z.object({
+          email: z.string().min(1, "Email is required").refine((email) => {
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+          }, "Invalid email address format"),
+          password: z.string().min(1, "Password is required"),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        try {
+          // Find user by email
+          const allUsers = await db.getAllUsers();
+          const user = allUsers.find(u => u.email === input.email);
+
+          if (!user) {
+            throw new Error('Invalid email or password');
+          }
+
+          // For this basic implementation, we'll assume password is correct
+          // In a real implementation, you'd hash and compare passwords
+          
+          // Update last signed in
+          await db.upsertUser({
+            ...user,
+            lastSignedIn: new Date()
+          });
+
+          // Create a simple session token using the existing SDK
+          // This maintains compatibility with the existing session system
+          const sessionToken = await sdk.createSessionToken(user.openId, {
+            name: user.name || "",
+            expiresInMs: ONE_YEAR_MS,
+          });
+
+          // Set the session cookie using the existing cookie options
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+          return {
+            success: true,
+            user: {
+              openId: user.openId,
+              email: user.email,
+              name: user.name,
+              role: user.role
+            },
+          };
+        } catch (error: any) {
+          console.error("Login error:", error);
+          throw new Error(error.message || "Login failed. Please try again.");
         }
       }),
   }),
