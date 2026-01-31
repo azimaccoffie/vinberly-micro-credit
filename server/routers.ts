@@ -34,7 +34,11 @@ export const appRouter = router({
       .input(
         z.object({
           fullName: z.string().min(1, "Full name is required"),
-          email: z.string().email("Invalid email address"),
+          email: z.string().min(1, "Email is required").refine((email) => {
+            // Basic email validation that's more permissive
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+          }, "Invalid email address format"),
           password: z.string().min(8, "Password must be at least 8 characters"),
           businessName: z.string().min(1, "Business name is required"),
           businessType: z.string().min(1, "Business type is required"),

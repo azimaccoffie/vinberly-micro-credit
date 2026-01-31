@@ -35,9 +35,49 @@ export default function UserRegistration() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Client-side validation
     if (formData.password !== formData.confirmPassword) {
       toast.error("Validation Error", {
         description: "Passwords do not match!"
+      });
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Validation Error", {
+        description: "Please enter a valid email address (e.g., user@example.com)"
+      });
+      return;
+    }
+    
+    // Validate password length
+    if (formData.password.length < 8) {
+      toast.error("Validation Error", {
+        description: "Password must be at least 8 characters long."
+      });
+      return;
+    }
+    
+    // Validate required fields
+    if (!formData.fullName.trim()) {
+      toast.error("Validation Error", {
+        description: "Please enter your full name."
+      });
+      return;
+    }
+    
+    if (!formData.businessName.trim()) {
+      toast.error("Validation Error", {
+        description: "Please enter your business name."
+      });
+      return;
+    }
+    
+    if (!formData.businessType.trim()) {
+      toast.error("Validation Error", {
+        description: "Please enter your business type."
       });
       return;
     }
@@ -64,24 +104,32 @@ export default function UserRegistration() {
     } catch (error: any) {
       console.error("Registration failed:", error);
       
-      // Handle specific error cases
+      // Handle specific error cases with better messaging
       if (error?.message) {
         if (error.message.includes("email")) {
           toast.error("Registration failed", {
-            description: "Invalid email address. Please check your email format."
+            description: "Please enter a valid email address (e.g., user@example.com)"
           });
         } else if (error.message.includes("password")) {
           toast.error("Registration failed", {
             description: "Password must be at least 8 characters long."
           });
+        } else if (error.message.includes("business")) {
+          toast.error("Registration failed", {
+            description: "Please fill in all required business information."
+          });
+        } else if (error.message.includes("name")) {
+          toast.error("Registration failed", {
+            description: "Please enter your full name."
+          });
         } else {
           toast.error("Registration failed", {
-            description: error.message
+            description: error.message || "Please check your information and try again."
           });
         }
       } else {
         toast.error("Registration failed", {
-          description: "Please try again."
+          description: "Please try again or contact support."
         });
       }
     }
