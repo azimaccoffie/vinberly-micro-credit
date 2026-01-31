@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 
 interface LoanDetails {
   loanAmount: number;
@@ -29,30 +30,49 @@ export default function CustomerDashboard() {
   // Debug logging
   console.log('[Dashboard] Auth state:', { user, loading, error, isAuthenticated, isLoggedIn });
   
+  // If user is authenticated via OAuth, automatically consider them logged in
+  const isUserAuthenticated = isAuthenticated || user !== null;
+
+  // Fetch user-specific loan data
+  const { data: customerData, isLoading: customerDataLoading, isError: customerDataError, refetch: refetchCustomerData } = trpc.loanApplication.getCustomerData.useQuery(undefined, {
+    enabled: isUserAuthenticated && !!user?.email, // Only fetch if user is authenticated and has an email
+    refetchOnWindowFocus: false, // Don't refetch when window gains focus
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Use fetched data or fallback to defaults
+  const loanDetails = {
+    loanAmount: customerData?.loanBalance ? parseFloat(customerData.loanBalance) + parseFloat(customerData.totalRepaid) : 10000,
+    loanBalance: customerData?.loanBalance ? parseFloat(customerData.loanBalance) : 7500,
+    totalRepaid: customerData?.totalRepaid ? parseFloat(customerData.totalRepaid) : 2500,
+    interestRate: customerData?.interestRate ? parseFloat(customerData.interestRate) : 2.5,
+    loanTerm: customerData?.loanTerm || 12,
+    paymentsCompleted: customerData?.paymentsCompleted || 3,
+    totalPayments: customerData?.totalPayments || 12,
+    nextPaymentDate: customerData?.nextPaymentDate ? new Date(customerData.nextPaymentDate).toISOString().split('T')[0] : "2026-02-15",
+    nextPaymentAmount: customerData?.nextPaymentAmount ? parseFloat(customerData.nextPaymentAmount) : 875,
+  };
+
   // Force refresh auth state when component mounts
   const { refresh } = useAuth({ redirectOnUnauthenticated: false });
+  
   useEffect(() => {
     console.log('[Dashboard] Component mounted, refreshing auth state');
     refresh();
+    
     // Additional refresh after a short delay to ensure session is loaded
     const timer = setTimeout(() => {
       console.log('[Dashboard] Secondary refresh attempt');
       refresh();
+      
+      // If user is authenticated, also refresh customer data
+      if (isUserAuthenticated) {
+        refetchCustomerData();
+      }
     }, 1000);
+    
     return () => clearTimeout(timer);
-  }, [refresh]);
-  
-  const [loanDetails] = useState<LoanDetails>({
-    loanAmount: 10000,
-    loanBalance: 7500,
-    totalRepaid: 2500,
-    interestRate: 2.5,
-    loanTerm: 12,
-    paymentsCompleted: 3,
-    totalPayments: 12,
-    nextPaymentDate: "2026-02-15",
-    nextPaymentAmount: 875,
-  });
+  }, [refresh, isUserAuthenticated, refetchCustomerData]);
 
   const handleLogin = () => {
     if (!customerId) {
@@ -73,11 +93,8 @@ export default function CustomerDashboard() {
 
   const repaymentProgress = (loanDetails.paymentsCompleted / loanDetails.totalPayments) * 100;
 
-  // If user is authenticated via OAuth, automatically consider them logged in
-  const isUserAuthenticated = isAuthenticated || user !== null;
-  
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading || (isUserAuthenticated && customerDataLoading)) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -91,7 +108,7 @@ export default function CustomerDashboard() {
   }
 
   // Show error state
-  if (error) {
+  if (error || (isUserAuthenticated && customerDataError)) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -102,7 +119,7 @@ export default function CustomerDashboard() {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-red-900 mb-2">Authentication Error</h2>
+              <h2 className="text-xl font-bold text-red-900 mb-2">{error ? 'Authentication Error' : 'Data Loading Error'}</h2>
               <p className="text-muted-foreground mb-4">There was a problem loading your dashboard. Please try signing in again.</p>
               <Button asChild>
                 <a href="/login">Go to Login</a>

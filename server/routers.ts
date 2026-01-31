@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
-import { createLoanApplication, getLoanApplications, updateLoanApplicationStatus, getLoanApplicationById } from "./loanDb";
+import { createLoanApplication, getLoanApplications, updateLoanApplicationStatus, getLoanApplicationById, getCustomerLoanData } from "./loanDb";
 import { getAllUsers, updateUserRole as updateUserRoleDB, deleteUser as deleteUserDB } from "./db";
 import { notifyOwner } from "./_core/notification";
 import { sendConfirmationEmail, sendAdminNotificationEmail } from "./emailService";
@@ -158,6 +158,15 @@ export const appRouter = router({
         }
         await updateLoanApplicationStatus(input.applicationId, input.newStatus);
         return { success: true };
+      }),
+
+    // Get customer-specific loan data
+    getCustomerData: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!ctx.user?.email) {
+          throw new Error("User email not available");
+        }
+        return await getCustomerLoanData(ctx.user.email);
       }),
   }),
 
