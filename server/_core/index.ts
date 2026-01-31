@@ -50,8 +50,19 @@ async function startServer() {
       next();
     }
   });
+  // Health check endpoint
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      routes: ["/api/oauth/callback", "/api/mock-login", "/api/trpc"]
+    });
+  });
+  
+  // Register API routes BEFORE static file serving
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
   // tRPC API
   app.use(
     "/api/trpc",
@@ -60,6 +71,7 @@ async function startServer() {
       createContext,
     })
   );
+  
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

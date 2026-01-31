@@ -11,7 +11,13 @@ function getQueryParam(req: Request, key: string): string | undefined {
 
 export function registerOAuthRoutes(app: Express) {
   console.log("[OAuth] Registering OAuth routes...");
+  
+  // Add route logging
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    console.log("[OAuth] === CALLBACK ROUTE HIT ===");
+    console.log("[OAuth] Full URL:", req.protocol + "://" + req.get("host") + req.originalUrl);
+    console.log("[OAuth] Query params:", req.query);
+    console.log("[OAuth] Headers:", req.headers);
     console.log("[OAuth] Callback received");
     console.log("[OAuth] Query params:", req.query);
     
