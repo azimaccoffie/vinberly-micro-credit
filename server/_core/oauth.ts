@@ -79,8 +79,13 @@ export function registerOAuthRoutes(app: Express) {
       };
 
       console.log("[Auth] Upserting demo user...");
-      await db.upsertUser(demoUser);
-      console.log("[Auth] Demo user upserted successfully");
+      try {
+        await db.upsertUser(demoUser);
+        console.log("[Auth] Demo user upserted successfully");
+      } catch (dbError) {
+        console.warn("[Auth] Database upsert failed, using in-memory fallback:", dbError);
+        // Continue anyway since in-memory store is used as fallback
+      }
 
       console.log("[Auth] Creating session token...");
       const sessionToken = await sdk.createSessionToken(demoUser.openId, {

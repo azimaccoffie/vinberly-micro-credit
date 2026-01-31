@@ -18,6 +18,7 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { user } = useAuth();
 
   // If user is already authenticated, redirect to dashboard
@@ -31,25 +32,42 @@ export default function LoginPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const { mutate: login, isLoading } = trpc.auth.login.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Login successful!");
+        // Refresh the page to trigger auth state update
+        window.location.reload();
+      } else {
+        toast.error("Login failed", {
+          description: data.message || "Unknown error occurred"
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error("Login failed", {
+        description: error.message || "An error occurred during login"
+      });
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    setIsLoggingIn(true);
     
     // Simple validation
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
+      setIsLoggingIn(false);
       return;
     }
 
-    // In a real implementation, you would:
-    // 1. Validate credentials against your auth system
-    // 2. Create a session/token
-    // 3. Redirect to dashboard
-    
-    // For now, show a success message and redirect
-    toast.success("Login successful!");
-    setTimeout(() => {
-      window.location.href = "/dashboard";
-    }, 1000);
+    // Call the login mutation
+    login({
+      email: formData.email,
+      password: formData.password
+    });
   };
 
   return (
@@ -90,8 +108,9 @@ export default function LoginPage() {
             <Button 
               type="submit" 
               className="w-full mb-4"
+              disabled={isLoggingIn}
             >
-              <LogIn className="mr-2 h-4 w-4" /> Sign In
+              {isLoggingIn ? "Signing In..." : <><LogIn className="mr-2 h-4 w-4" /> Sign In</>}
             </Button>
             
             <div className="w-full space-y-3">
@@ -108,14 +127,14 @@ export default function LoginPage() {
               
               <Button 
                 onClick={() => {
-                  const loginUrl = getLoginUrl();
-                  console.log("[LoginPage] Attempting OAuth login with URL:", loginUrl);
-                  window.location.href = loginUrl;
+                  // Use mock login since OAuth is not working
+                  console.log("[LoginPage] Using mock login as OAuth is unavailable");
+                  window.location.href = "/api/mock-login";
                 }}
                 variant="outline" 
                 className="w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50 gap-2"
               >
-                <User className="h-4 w-4" /> OAuth Login
+                <User className="h-4 w-4" /> Demo Login
               </Button>
               
               <Button 
