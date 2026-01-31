@@ -85,20 +85,26 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F8F7F4] to-white">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-[#D4D0C8]">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-[#D4D0C8] sticky top-0 z-50">
         <div className="container flex items-center justify-between py-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#1B5E3F] to-[#2A8659] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
-            </div>
-            <span className="font-bold text-xl text-[#2A2A2A]">Vinberly</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#services" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors">Services</a>
-            <a href="/marketplace" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors">Marketplace</a>
-            <a href="/blog" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors">Blog</a>
-            <a href="/support" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors font-medium text-emerald-700">Support</a>
+          <div className="flex items-center gap-8">
+            <a href="/" className="flex items-center gap-2">
+              <div className="h-10 w-10 rounded-xl bg-[#1B5E3F] flex items-center justify-center text-white font-bold text-lg">
+                V
+              </div>
+              <span className="text-xl font-bold text-[#2A2A2A]">Vinberly</span>
+            </a>
             
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#services" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors font-medium">Services</a>
+              <a href="#calculator" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors font-medium">Calculator</a>
+              <a href="#testimonials" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors font-medium">Testimonials</a>
+              <a href="/blog" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors font-medium">Blog</a>
+              <a href="/support" className="text-[#2A2A2A] hover:text-[#1B5E3F] transition-colors font-medium">Support</a>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <Button 
                 variant="outline" 
@@ -114,7 +120,16 @@ export default function Home() {
                   variant="ghost" 
                   className="text-[#2A2A2A] hover:text-emerald-700 gap-2 cursor-pointer"
                 >
-                  <a href={getLoginUrl()}>
+                  <a href="/register">
+                    <User className="h-4 w-4" /> Register
+                  </a>
+                </Button>
+                <Button 
+                  asChild
+                  variant="ghost" 
+                  className="text-[#2A2A2A] hover:text-emerald-700 gap-2 cursor-pointer"
+                >
+                  <a href="/login">
                     <LogIn className="h-4 w-4" /> Sign In
                   </a>
                 </Button>
@@ -153,6 +168,16 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button onClick={handleApplyNow} size="lg" className="bg-[#1B5E3F] hover:bg-[#154B2F] text-white text-base">
                   Get Started <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+                <Button 
+                  asChild
+                  size="lg" 
+                  variant="outline" 
+                  className="border-[#1B5E3F] text-[#1B5E3F] hover:bg-[#1B5E3F]/5 gap-2"
+                >
+                  <a href="/register">
+                    <User className="w-5 h-5" /> Create Account
+                  </a>
                 </Button>
                 <Button onClick={() => {
                   const element = document.getElementById("services");

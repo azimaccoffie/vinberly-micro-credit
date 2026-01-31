@@ -33,43 +33,54 @@ export const appRouter = router({
     register: publicProcedure
       .input(
         z.object({
-          fullName: z.string().min(1),
-          email: z.string().email(),
-          password: z.string().min(8), // Minimum 8 characters for security
-          businessName: z.string().min(1),
-          businessType: z.string().min(1),
+          fullName: z.string().min(1, "Full name is required"),
+          email: z.string().email("Invalid email address"),
+          password: z.string().min(8, "Password must be at least 8 characters"),
+          businessName: z.string().min(1, "Business name is required"),
+          businessType: z.string().min(1, "Business type is required"),
         })
       )
       .mutation(async ({ input }) => {
-        // In a real implementation, you would:
-        // 1. Hash the password
-        // 2. Check if user already exists
-        // 3. Create the user in the database
-        // 4. Send verification email
-        // 5. Return success or error
-        
-        // For now, we'll simulate registration by creating a user
-        // and returning a success message
-        
-        // Generate a unique openId for the user
-        const openId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        // Create user with role 'user' by default
-        await db.upsertUser({
-          openId: openId,
-          name: input.fullName,
-          email: input.email,
-          loginMethod: "email-password", // Indicate registration method
-          role: "user", // Default role for new registrations
-          lastSignedIn: new Date(),
-        });
-        
-        return {
-          success: true,
-          message: "Registration successful! Please check your email to verify your account.",
-          // Returning openId so the client knows the user identifier
-          openId: openId,
-        };
+        try {
+          // In a real implementation, you would:
+          // 1. Hash the password
+          // 2. Check if user already exists
+          // 3. Create the user in the database
+          // 4. Send verification email
+          // 5. Return success or error
+          
+          // Check if email already exists (simulated)
+          // const existingUser = await db.getUserByEmail(input.email);
+          // if (existingUser) {
+          //   throw new Error("User with this email already exists");
+          // }
+          
+          // For now, we'll simulate registration by creating a user
+          // and returning a success message
+          
+          // Generate a unique openId for the user
+          const openId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          
+          // Create user with role 'user' by default
+          await db.upsertUser({
+            openId: openId,
+            name: input.fullName,
+            email: input.email,
+            loginMethod: "email-password", // Indicate registration method
+            role: "user", // Default role for new registrations
+            lastSignedIn: new Date(),
+          });
+          
+          return {
+            success: true,
+            message: "Registration successful! Please check your email to verify your account.",
+            // Returning openId so the client knows the user identifier
+            openId: openId,
+          };
+        } catch (error: any) {
+          console.error("Registration error:", error);
+          throw new Error(error.message || "Registration failed. Please try again.");
+        }
       }),
   }),
 
@@ -107,7 +118,7 @@ export const appRouter = router({
         await sendConfirmationEmail(input.email, input.fullName, applicationId, input.businessName);
 
         // Send admin notification
-        await sendAdminNotificationEmail("info@vinberlymicro-credit.com", input.fullName, input.businessName, input.loanAmount, applicationId);
+        await sendAdminNotificationEmail("azifotor@gmail.com", input.fullName, input.businessName, input.loanAmount, applicationId);
 
         // Send SMS alert to team
         await sendTeamAlertSMS(input.fullName, input.businessName, input.loanAmount);

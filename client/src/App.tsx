@@ -20,6 +20,7 @@ import Marketplace from "./pages/Marketplace";
 import Tokenization from "./pages/Tokenization";
 import UserRegistration from "./pages/UserRegistration";
 import UserManagement from "./pages/UserManagement";
+import LoginPage from "./pages/LoginPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/support" component={Support} />
       <Route path={"/marketplace"} component={Marketplace} />
       <Route path="/tokenization" component={Tokenization} />
+      <Route path="/login" component={LoginPage} />
       <Route path="/register" component={UserRegistration} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}

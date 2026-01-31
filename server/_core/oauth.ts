@@ -12,10 +12,17 @@ function getQueryParam(req: Request, key: string): string | undefined {
 export function registerOAuthRoutes(app: Express) {
   console.log("[OAuth] Registering OAuth routes...");
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
+    console.log("[OAuth] Callback received");
+    console.log("[OAuth] Query params:", req.query);
+    
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
 
+    console.log("[OAuth] Code:", code);
+    console.log("[OAuth] State:", state);
+
     if (!code || !state) {
+      console.log("[OAuth] Missing code or state");
       res.status(400).json({ error: "code and state are required" });
       return;
     }

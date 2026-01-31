@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 interface RegisterFormData {
   fullName: string;
@@ -35,11 +36,15 @@ export default function UserRegistration() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Validation Error", {
+        description: "Passwords do not match!"
+      });
       return;
     }
 
     try {
+      toast.info("Processing your registration...");
+      
       const result = await registerMutation.mutateAsync({
         fullName: formData.fullName,
         email: formData.email,
@@ -48,12 +53,37 @@ export default function UserRegistration() {
         businessType: formData.businessType,
       });
             
-      alert("Registration successful! Please check your email to verify your account.");
-      // Redirect to login page after successful registration
-      window.location.href = "/dashboard"; // This will trigger the OAuth flow if not logged in
-    } catch (error) {
+      toast.success("Registration successful!", {
+        description: "Please check your email to verify your account. You can now sign in to access your dashboard."
+      });
+      
+      // Redirect to homepage after successful registration
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    } catch (error: any) {
       console.error("Registration failed:", error);
-      alert("Registration failed. Please try again.");
+      
+      // Handle specific error cases
+      if (error?.message) {
+        if (error.message.includes("email")) {
+          toast.error("Registration failed", {
+            description: "Invalid email address. Please check your email format."
+          });
+        } else if (error.message.includes("password")) {
+          toast.error("Registration failed", {
+            description: "Password must be at least 8 characters long."
+          });
+        } else {
+          toast.error("Registration failed", {
+            description: error.message
+          });
+        }
+      } else {
+        toast.error("Registration failed", {
+          description: "Please try again."
+        });
+      }
     }
   };
 
