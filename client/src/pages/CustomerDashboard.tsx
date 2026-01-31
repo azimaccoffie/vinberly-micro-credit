@@ -24,16 +24,22 @@ interface LoanDetails {
 export default function CustomerDashboard() {
   const [customerId, setCustomerId] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { user, loading, error } = useAuth(); // Get authenticated user
+  const { user, loading, error, isAuthenticated } = useAuth(); // Get authenticated user
   
   // Debug logging
-  console.log('[Dashboard] Auth state:', { user, loading, error, isLoggedIn });
+  console.log('[Dashboard] Auth state:', { user, loading, error, isAuthenticated, isLoggedIn });
   
   // Force refresh auth state when component mounts
-  const { refresh } = useAuth();
+  const { refresh } = useAuth({ redirectOnUnauthenticated: false });
   useEffect(() => {
     console.log('[Dashboard] Component mounted, refreshing auth state');
     refresh();
+    // Additional refresh after a short delay to ensure session is loaded
+    const timer = setTimeout(() => {
+      console.log('[Dashboard] Secondary refresh attempt');
+      refresh();
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [refresh]);
   
   const [loanDetails] = useState<LoanDetails>({
@@ -68,7 +74,7 @@ export default function CustomerDashboard() {
   const repaymentProgress = (loanDetails.paymentsCompleted / loanDetails.totalPayments) * 100;
 
   // If user is authenticated via OAuth, automatically consider them logged in
-  const isUserAuthenticated = user !== null;
+  const isUserAuthenticated = isAuthenticated || user !== null;
   
   // Show loading state while checking authentication
   if (loading) {
