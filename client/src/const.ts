@@ -13,6 +13,8 @@ export const getLoginUrl = () => {
     const url = `${oauthPortalUrl}/app-auth?appId=${encodeURIComponent(appId)}&redirectUri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&type=signIn`;
     
     console.log("[Auth] Generated Login URL:", url);
+    console.log("[Auth] Redirect URI:", redirectUri);
+    console.log("[Auth] Current Origin:", window.location.origin);
     return url;
   } catch (err) {
     console.error("[Auth] Error generating login URL:", err);

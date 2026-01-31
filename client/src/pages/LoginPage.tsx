@@ -107,13 +107,15 @@ export default function LoginPage() {
               </div>
               
               <Button 
-                asChild
+                onClick={() => {
+                  const loginUrl = getLoginUrl();
+                  console.log("[LoginPage] Attempting OAuth login with URL:", loginUrl);
+                  window.location.href = loginUrl;
+                }}
                 variant="outline" 
                 className="w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50 gap-2"
               >
-                <a href={getLoginUrl()}>
-                  <User className="h-4 w-4" /> OAuth Login
-                </a>
+                <User className="h-4 w-4" /> OAuth Login
               </Button>
               
               <Button 
