@@ -58,20 +58,25 @@ export default function CustomerDashboard() {
   
   useEffect(() => {
     console.log('[Dashboard] Component mounted, refreshing auth state');
-    refresh();
     
-    // Additional refresh after a short delay to ensure session is loaded
-    const timer = setTimeout(() => {
-      console.log('[Dashboard] Secondary refresh attempt');
+    // Refresh auth state to detect session cookie set by server-side login
+    const refreshTimer = setTimeout(() => {
+      console.log('[Dashboard] Refreshing auth state after mount');
       refresh();
       
-      // If user is authenticated, also refresh customer data
-      if (isUserAuthenticated) {
-        refetchCustomerData();
-      }
-    }, 1000);
+      // Additional refresh after a short delay to ensure session is loaded
+      setTimeout(() => {
+        console.log('[Dashboard] Secondary refresh attempt');
+        refresh();
+        
+        // If user is authenticated, also refresh customer data
+        if (isUserAuthenticated) {
+          refetchCustomerData();
+        }
+      }, 500);
+    }, 300);
     
-    return () => clearTimeout(timer);
+    return () => clearTimeout(refreshTimer);
   }, [refresh, isUserAuthenticated, refetchCustomerData]);
 
   const handleLogin = () => {

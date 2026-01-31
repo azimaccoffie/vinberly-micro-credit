@@ -129,6 +129,7 @@ export default function LoginPage() {
                 onClick={() => {
                   // Use mock login since OAuth is not working
                   console.log("[LoginPage] Using mock login as OAuth is unavailable");
+                  // Direct redirect to mock login endpoint
                   window.location.href = "/api/mock-login";
                 }}
                 variant="outline" 
