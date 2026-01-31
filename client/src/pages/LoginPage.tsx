@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl, getMockLoginUrl } from "@/const";
 import { LogIn, User } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "../lib/trpc";
 
 interface LoginFormData {
   email: string;
@@ -32,16 +33,12 @@ export default function LoginPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const { mutate: login, isLoading } = trpc.auth.login.useMutation({
+  const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
       if (data.success) {
         toast.success("Login successful!");
         // Refresh the page to trigger auth state update
         window.location.reload();
-      } else {
-        toast.error("Login failed", {
-          description: data.message || "Unknown error occurred"
-        });
       }
     },
     onError: (error) => {
@@ -54,17 +51,14 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    setIsLoggingIn(true);
-    
     // Simple validation
     if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
-      setIsLoggingIn(false);
       return;
     }
 
     // Call the login mutation
-    login({
+    loginMutation.mutate({
       email: formData.email,
       password: formData.password
     });
@@ -108,9 +102,9 @@ export default function LoginPage() {
             <Button 
               type="submit" 
               className="w-full mb-4"
-              disabled={isLoggingIn}
+              disabled={isLoggingIn || loginMutation.isPending}
             >
-              {isLoggingIn ? "Signing In..." : <><LogIn className="mr-2 h-4 w-4" /> Sign In</>}
+              {(isLoggingIn || loginMutation.isPending) ? "Signing In..." : <><LogIn className="mr-2 h-4 w-4" /> Sign In</>}
             </Button>
             
             <div className="w-full space-y-3">
