@@ -150,7 +150,7 @@ export const appRouter = router({
           businessName: z.string().min(1),
           businessType: z.string().min(1),
           businessDescription: z.string().optional(),
-          loanAmount: z.string().min(1),
+          loanAmount: z.number().min(1000).max(100000),
           loanPurpose: z.string().min(1),
         })
       )
@@ -162,7 +162,7 @@ export const appRouter = router({
           businessName: input.businessName,
           businessType: input.businessType,
           businessDescription: input.businessDescription || null,
-          loanAmount: typeof input.loanAmount === 'string' ? input.loanAmount : input.loanAmount.toString(),
+          loanAmount: input.loanAmount.toString(),
           loanPurpose: input.loanPurpose,
           status: "pending",
         });
@@ -179,14 +179,14 @@ export const appRouter = router({
 
         // Send admin notification (non-blocking)
         try {
-          await sendAdminNotificationEmail("azifotor@gmail.com", input.fullName, input.businessName, input.loanAmount, applicationId);
+          await sendAdminNotificationEmail("azifotor@gmail.com", input.fullName, input.businessName, input.loanAmount.toString(), applicationId);
         } catch (emailError) {
           console.error("[Loan Application] Failed to send admin notification:", emailError);
         }
 
         // Send SMS alert to team (non-blocking)
         try {
-          await sendTeamAlertSMS(input.fullName, input.businessName, input.loanAmount);
+          await sendTeamAlertSMS(input.fullName, input.businessName, `₵${input.loanAmount.toLocaleString()}`);
         } catch (smsError) {
           console.error("[Loan Application] Failed to send SMS alert:", smsError);
         }
@@ -195,7 +195,7 @@ export const appRouter = router({
         try {
           await notifyOwner({
             title: "New Loan Application",
-            content: `${input.fullName} has submitted a loan application for ₵${input.loanAmount}`,
+            content: `${input.fullName} has submitted a loan application for ₵${input.loanAmount.toLocaleString()}`,
           });
         } catch (notificationError) {
           console.error("[Loan Application] Failed to send notification:", notificationError);
