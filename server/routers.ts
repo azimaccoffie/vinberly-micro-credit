@@ -141,7 +141,11 @@ export const appRouter = router({
       .input(
         z.object({
           fullName: z.string().min(1),
-          email: z.string().email(),
+          email: z.string().min(1).refine((email) => {
+            // Basic email validation that's more permissive
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+          }, "Invalid email address format"),
           phone: z.string().min(1),
           businessName: z.string().min(1),
           businessType: z.string().min(1),
@@ -158,7 +162,7 @@ export const appRouter = router({
           businessName: input.businessName,
           businessType: input.businessType,
           businessDescription: input.businessDescription || null,
-          loanAmount: input.loanAmount,
+          loanAmount: typeof input.loanAmount === 'string' ? input.loanAmount : input.loanAmount.toString(),
           loanPurpose: input.loanPurpose,
           status: "pending",
         });
@@ -166,20 +170,36 @@ export const appRouter = router({
         // Get the inserted ID from the result
         const applicationId = (result as any).insertId || 1;
 
-        // Send confirmation email
-        await sendConfirmationEmail(input.email, input.fullName, applicationId, input.businessName);
+        // Send confirmation email (non-blocking)
+        try {
+          await sendConfirmationEmail(input.email, input.fullName, applicationId, input.businessName);
+        } catch (emailError) {
+          console.error("[Loan Application] Failed to send confirmation email:", emailError);
+        }
 
-        // Send admin notification
-        await sendAdminNotificationEmail("azifotor@gmail.com", input.fullName, input.businessName, input.loanAmount, applicationId);
+        // Send admin notification (non-blocking)
+        try {
+          await sendAdminNotificationEmail("azifotor@gmail.com", input.fullName, input.businessName, input.loanAmount, applicationId);
+        } catch (emailError) {
+          console.error("[Loan Application] Failed to send admin notification:", emailError);
+        }
 
-        // Send SMS alert to team
-        await sendTeamAlertSMS(input.fullName, input.businessName, input.loanAmount);
+        // Send SMS alert to team (non-blocking)
+        try {
+          await sendTeamAlertSMS(input.fullName, input.businessName, input.loanAmount);
+        } catch (smsError) {
+          console.error("[Loan Application] Failed to send SMS alert:", smsError);
+        }
 
-        // Notify owner
-        await notifyOwner({
-          title: "New Loan Application",
-          content: `${input.fullName} has submitted a loan application for ₵${input.loanAmount}`,
-        });
+        // Notify owner (non-blocking)
+        try {
+          await notifyOwner({
+            title: "New Loan Application",
+            content: `${input.fullName} has submitted a loan application for ₵${input.loanAmount}`,
+          });
+        } catch (notificationError) {
+          console.error("[Loan Application] Failed to send notification:", notificationError);
+        }
 
         return { applicationId, success: true };
       }),
