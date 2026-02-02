@@ -201,7 +201,10 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
+      // Only log in development mode, reduce noise in production
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[Auth] Missing session cookie (expected for unauthenticated requests)");
+      }
       return null;
     }
 
