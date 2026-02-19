@@ -5,6 +5,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
+import { hashPassword, verifyPassword } from "./_core/password";
 import { createLoanApplication, getLoanApplications, updateLoanApplicationStatus, getLoanApplicationById, getCustomerLoanData } from "./loanDb";
 import { getAllUsers, updateUserRole as updateUserRoleDB, deleteUser as deleteUserDB } from "./db";
 import { notifyOwner } from "./_core/notification";
@@ -58,11 +59,15 @@ export const appRouter = router({
           // Generate a unique openId for the user
           const openId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+          // Hash the password before storing
+          const hashedPassword = await hashPassword(input.password);
+          
           // Create user with role 'user' by default
           await db.upsertUser({
             openId: openId,
             name: input.fullName,
             email: input.email,
+            password: hashedPassword,
             loginMethod: "email-password", // Indicate registration method
             role: "user", // Default role for new registrations
             lastSignedIn: new Date(),
@@ -100,8 +105,18 @@ export const appRouter = router({
             throw new Error('Invalid email or password');
           }
 
-          // For this basic implementation, we'll assume password is correct
-          // In a real implementation, you'd hash and compare passwords
+          // Verify password if the user has a password (registered with email/password)
+          if (user.password) {
+            const isValidPassword = await verifyPassword(input.password, user.password);
+            if (!isValidPassword) {
+              throw new Error('Invalid email or password');
+            }
+          } else {
+            // If user doesn't have a password, they likely registered via OAuth
+            // We'll assume the OAuth flow validated their identity
+            // But for security, we should enforce password verification
+            throw new Error('Invalid authentication method for this account');
+          }
           
           // Update last signed in
           await db.upsertUser({

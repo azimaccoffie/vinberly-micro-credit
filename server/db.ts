@@ -39,6 +39,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       openId: user.openId,
       name: user.name ?? existingUser?.name ?? null,
       email: user.email ?? existingUser?.email ?? null,
+      password: user.password ?? existingUser?.password ?? null,
       loginMethod: user.loginMethod ?? existingUser?.loginMethod ?? null,
       role: user.role ?? existingUser?.role ?? (user.openId === ENV.ownerOpenId ? "admin" : "user"),
       createdAt: existingUser?.createdAt || now,
@@ -57,7 +58,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     };
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
+    const textFields = ["name", "email", "password", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
 
     const assignNullable = (field: TextField) => {
@@ -138,8 +139,11 @@ export async function updateUserRole(openId: string, role: "user" | "admin") {
     return null;
   }
 
-  const result = await db.update(users).set({ role }).where(eq(users.openId, openId)).returning();
-  return result.length > 0 ? result[0] : null;
+  const result = await db.update(users).set({ role }).where(eq(users.openId, openId)).execute();
+  if (result) {
+    return await db.select().from(users).where(eq(users.openId, openId)).limit(1).then(res => res[0]);
+  }
+  return null;
 }
 
 // Delete user for admin management
@@ -155,8 +159,8 @@ export async function deleteUser(openId: string) {
     return false;
   }
 
-  const result = await db.delete(users).where(eq(users.openId, openId));
-  return result.rowsAffected > 0;
+  await db.delete(users).where(eq(users.openId, openId)).execute();
+  return true;
 }
 
 // TODO: add feature queries here as your schema grows.
