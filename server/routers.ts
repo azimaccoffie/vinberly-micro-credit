@@ -177,7 +177,7 @@ export const appRouter = router({
           businessName: input.businessName,
           businessType: input.businessType,
           businessDescription: input.businessDescription || null,
-          loanAmount: input.loanAmount.toString(),
+          loanAmount: input.loanAmount,
           loanPurpose: input.loanPurpose,
           status: "pending",
         });
